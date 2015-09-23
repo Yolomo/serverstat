@@ -160,6 +160,8 @@ load_io=$(prep $(num "$load_io"))
 
 # Get network latency
 ping_1=$(prep $(num "$(ping -c 2 -w 2 8.8.8.8 | grep rtt | cut -d'/' -f4 | awk '{ print $3 }')"))
+#replace with non-google reliable host
+ping_2=$(prep $(num "$(ping -c 2 -w 2 8.8.4.4 | grep rtt | cut -d'/' -f4 | awk '{ print $3 }')"))
 
 echo $(formatvar "$version")
 echo $(formatvar "$uptime")
@@ -192,6 +194,5 @@ echo $(formatvar "$tx_gap")
 echo $(formatvar "$load")
 echo $(formatvar "$load_cpu")
 echo $(formatvar "$load_io")
-echo $(formatvar "$ping_eu")
-echo $(formatvar "$ping_us")
-echo $(formatvar "$ping_as")
+echo $(formatvar "$ping_1")
+echo $(formatvar "$ping_2")
