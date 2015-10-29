@@ -1,0 +1,9 @@
+language: go
+go:
+  - 1.4.2
+  - 1.5
+  - tip
+install:
+  - go get github.com/gin-gonic/gin
+notifications:
+  email: false
