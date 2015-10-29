@@ -39,56 +39,56 @@ sessions=$(prep "$(who | wc -l)")
 processes=$(prep "$(ps axc | wc -l)")
 processes_array="$(ps axc -o uname:12,pcpu,rss,cmd --sort=-pcpu,-rss --noheaders --width 120)"
 processes_array="$(echo "$processes_array" | grep -v " ps$" | sed 's/ \+ / /g' | sed '/^$/d' | tr "\n" ";")"
-file_handles=$(prep $(num "$(cat /proc/sys/fs/file-nr | awk '{ print $1 }')"))
-file_handles_limit=$(prep $(num "$(cat /proc/sys/fs/file-nr | awk '{ print $3 }')"))
-os_kernel=$(prep "$(uname -r)")
-os_name=$(prep "$(cat /etc/*release | grep '^PRETTY_NAME=\|^NAME=\|^DISTRIB_ID=' | awk -F\= '{ print $2 }' | tr -d '"' | tac)")
-cpu_name=$(prep "$(cat /proc/cpuinfo | grep 'model name' | awk -F\: '{ print $2 }')")
-cpu_cores=$(prep "$(($(cat /proc/cpuinfo | grep 'model name' | awk -F\: '{ print $2 }' | sed -e :a -e '$!N;s/\n/\|/;ta' | tr -cd \| | wc -c)+1))")
-ram_total=$(prep $(num "$(cat /proc/meminfo | grep ^MemTotal: | awk '{ print $2 }')"))
-ram_free=$(prep $(num "$(cat /proc/meminfo | grep ^MemFree: | awk '{ print $2 }')"))
-ram_cached=$(prep $(num "$(cat /proc/meminfo | grep ^Cached: | awk '{ print $2 }')"))
-ram_buffers=$(prep $(num "$(cat /proc/meminfo | grep ^Buffers: | awk '{ print $2 }')"))
-ram_usage=$((($ram_total-($ram_free+$ram_cached+$ram_buffers))*1024))
-ram_total=$(($ram_total*1024))
-swap_total=$(prep $(num "$(cat /proc/meminfo | grep ^SwapTotal: | awk '{ print $2 }')"))
-swap_free=$(prep $(num "$(cat /proc/meminfo | grep ^SwapFree: | awk '{ print $2 }')"))
-swap_usage=$((($swap_total-$swap_free)*1024))
-swap_total=$(($swap_total*1024))
-disk_total=$(prep $(num "$(($(df -P -B 1 | grep '^/' | awk '{ print $2 }' | sed -e :a -e '$!N;s/\n/+/;ta')))"))
-disk_usage=$(prep $(num "$(($(df -P -B 1 | grep '^/' | awk '{ print $3 }' | sed -e :a -e '$!N;s/\n/+/;ta')))"))
+filehandles=$(prep $(num "$(cat /proc/sys/fs/file-nr | awk '{ print $1 }')"))
+filehandles_limit=$(prep $(num "$(cat /proc/sys/fs/file-nr | awk '{ print $3 }')"))
+oskernel=$(prep "$(uname -r)")
+osname=$(prep "$(cat /etc/*release | grep '^PRETTY_NAME=\|^NAME=\|^DISTRIB_ID=' | awk -F\= '{ print $2 }' | tr -d '"' | tac)")
+cpuname=$(prep "$(cat /proc/cpuinfo | grep 'model name' | awk -F\: '{ print $2 }')")
+cpucores=$(prep "$(($(cat /proc/cpuinfo | grep 'model name' | awk -F\: '{ print $2 }' | sed -e :a -e '$!N;s/\n/\|/;ta' | tr -cd \| | wc -c)+1))")
+ramtotal=$(prep $(num "$(cat /proc/meminfo | grep ^MemTotal: | awk '{ print $2 }')"))
+ramfree=$(prep $(num "$(cat /proc/meminfo | grep ^MemFree: | awk '{ print $2 }')"))
+ramcached=$(prep $(num "$(cat /proc/meminfo | grep ^Cached: | awk '{ print $2 }')"))
+rambuffers=$(prep $(num "$(cat /proc/meminfo | grep ^Buffers: | awk '{ print $2 }')"))
+ramusage=$((($ramtotal-($ramfree+$ramcached+$rambuffers))*1024))
+ramtotal=$(($ramtotal*1024))
+swaptotal=$(prep $(num "$(cat /proc/meminfo | grep ^SwapTotal: | awk '{ print $2 }')"))
+swapfree=$(prep $(num "$(cat /proc/meminfo | grep ^SwapFree: | awk '{ print $2 }')"))
+swapusage=$((($swaptotal-$swapfree)*1024))
+swaptotal=$(($swaptotal*1024))
+disktotal=$(prep $(num "$(($(df -P -B 1 | grep '^/' | awk '{ print $2 }' | sed -e :a -e '$!N;s/\n/+/;ta')))"))
+diskusage=$(prep $(num "$(($(df -P -B 1 | grep '^/' | awk '{ print $3 }' | sed -e :a -e '$!N;s/\n/+/;ta')))"))
 
 
 case $(uname -m) in
 x86_64)
-	os_arch=$(prep "x64")
+	osarch=$(prep "x64")
 	;;
 i*86)
-	os_arch=$(prep "x86")
+	osarch=$(prep "x86")
 	;;
 *)
-	os_arch=$(prep "$(uname -m)")
+	osarch=$(prep "$(uname -m)")
 	;;
 esac
 
-if [ -z "$cpu_name" ]
+if [ -z "$cpuname" ]
 then
-	cpu_name=$(prep "$(cat /proc/cpuinfo | grep 'vendor_id' | awk -F\: '{ print $2 } END { if (!NR) print "N/A" }')")
-	cpu_cores=$(prep "$(($(cat /proc/cpuinfo | grep 'vendor_id' | awk -F\: '{ print $2 }' | sed -e :a -e '$!N;s/\n/\|/;ta' | tr -cd \| | wc -c)+1))")
+	cpuname=$(prep "$(cat /proc/cpuinfo | grep 'vendor_id' | awk -F\: '{ print $2 } END { if (!NR) print "N/A" }')")
+	cpucores=$(prep "$(($(cat /proc/cpuinfo | grep 'vendor_id' | awk -F\: '{ print $2 }' | sed -e :a -e '$!N;s/\n/\|/;ta' | tr -cd \| | wc -c)+1))")
 fi
 
-cpu_freq=$(prep "$(cat /proc/cpuinfo | grep 'cpu MHz' | awk -F\: '{ print $2 }')")
+cpufreq=$(prep "$(cat /proc/cpuinfo | grep 'cpu MHz' | awk -F\: '{ print $2 }')")
 
-if [ -z "$cpu_freq" ]
+if [ -z "$cpufreq" ]
 then
-	cpu_freq=$(prep $(num "$(lscpu | grep 'CPU MHz' | awk -F\: '{ print $2 }' | sed -e 's/^ *//g' -e 's/ *$//g')"))
+	cpufreq=$(prep $(num "$(lscpu | grep 'CPU MHz' | awk -F\: '{ print $2 }' | sed -e 's/^ *//g' -e 's/ *$//g')"))
 fi
 
 # RAM usage
 
 
 # Disk array
-disk_array=$(prep "$(df -P -B 1 | grep '^/' | awk '{ print $1" "$2" "$3";" }' | sed -e :a -e '$!N;s/\n/ /;ta' | awk '{ print $0 } END { if (!NR) print "N/A" }')")
+diskarray=$(prep "$(df -P -B 1 | grep '^/' | awk '{ print $1" "$2" "$3";" }' | sed -e :a -e '$!N;s/\n/ /;ta' | awk '{ print $0 } END { if (!NR) print "N/A" }')")
 
 # Active connections
 if [ -n "$(command -v ss)" ]
@@ -133,13 +133,13 @@ if [ -e agent-tempfile ]
 then
 	data=($(cat agent-tempfile))
 	interval=$(($time-${data[0]}))
-	cpu_gap=$(($cpu-${data[1]}))
+	cpugap=$(($cpu-${data[1]}))
 	io_gap=$(($io-${data[2]}))
 	idle_gap=$(($idle-${data[3]}))
 
-	if [[ $cpu_gap > "0" ]]
+	if [[ $cpugap > "0" ]]
 	then
-		load_cpu=$(((1000*($cpu_gap-$idle_gap)/$cpu_gap+5)/10))
+		load_cpu=$(((1000*($cpugap-$idle_gap)/$cpugap+5)/10))
 	fi
 
 	if [[ $io_gap > "0" ]]
@@ -176,21 +176,21 @@ echo $(formatvar "$uptime")
 echo $(formatvar "$sessions")
 echo $(formatvar "$processes")
 #echo $(formatvar "$processes_array")
-echo $(formatvar "$file_handles")
-echo $(formatvar "$file_handles_limit")
-echo $(formatvar "$os_kernel")
-echo $(formatvar "$os_name")
-echo $(formatvar "$os_arch")
-echo $(formatvar "$cpu_name")
-echo $(formatvar "$cpu_cores")
-echo $(formatvar "$cpu_freq")
-echo $(formatvar "$ram_total")
-echo $(formatvar "$ram_usage")
-echo $(formatvar "$swap_total")
-echo $(formatvar "$swap_usage")
-echo $(formatvar "$disk_array")
-echo $(formatvar "$disk_total")
-echo $(formatvar "$disk_usage")
+echo $(formatvar "$filehandles")
+echo $(formatvar "$filehandles_limit")
+echo $(formatvar "$oskernel")
+echo $(formatvar "$osname")
+echo $(formatvar "$osarch")
+echo $(formatvar "$cpuname")
+echo $(formatvar "$cpucores")
+echo $(formatvar "$cpufreq")
+echo $(formatvar "$ramtotal")
+echo $(formatvar "$ramusage")
+echo $(formatvar "$swaptotal")
+echo $(formatvar "$swapusage")
+echo $(formatvar "$diskarray")
+echo $(formatvar "$disktotal")
+echo $(formatvar "$diskusage")
 echo $(formatvar "$connections")
 echo $(formatvar "$nic")
 echo $(formatvar "$ipv4")
@@ -207,9 +207,9 @@ echo $(formatvar "$ping_1")
 
 echo "***********************"
 
-data_post="data=$(encode "$uptime"),$(encode "$sessions"),$(encode "$processes"),$(encode "$file_handles"),$(encode "$file_handles_limit"),$(encode "$os_kernel"),$(encode "$os_name"),$(encode "$os_arch"),$(encode "$cpu_name"),$(encode "$cpu_cores"),$(encode "$cpu_freq"),$(encode "$ram_total"),$(encode "$ram_usage"),$(encode "$swap_total"),$(encode "$swap_usage"),$(encode "$disk_array"),$(encode "$disk_total"),$(encode "$disk_usage"),$(encode "$connections"),$(encode "$nic"),$(encode "$ipv4"),$(encode "$ipv6"),$(encode "$rx"),$(encode "$tx"),$(encode "$rx_gap"),$(encode "$tx_gap"),$(encode "$load"),$(encode "$load_cpu"),$(encode "$load_io"),$(encode "$ping_1")"
+data_post="data=$(encode "$uptime"),$(encode "$sessions"),$(encode "$processes"),$(encode "$filehandles"),$(encode "$filehandles_limit"),$(encode "$oskernel"),$(encode "$osname"),$(encode "$osarch"),$(encode "$cpuname"),$(encode "$cpucores"),$(encode "$cpufreq"),$(encode "$ramtotal"),$(encode "$ramusage"),$(encode "$swaptotal"),$(encode "$swapusage"),$(encode "$diskarray"),$(encode "$disktotal"),$(encode "$diskusage"),$(encode "$connections"),$(encode "$nic"),$(encode "$ipv4"),$(encode "$ipv6"),$(encode "$rx"),$(encode "$tx"),$(encode "$rx_gap"),$(encode "$tx_gap"),$(encode "$load"),$(encode "$load_cpu"),$(encode "$load_io"),$(encode "$ping_1")"
 
-data_post="hostname=$(encode "$hostname")&uptime=$(encode "$uptime")&sessions=$(encode "$sessions")&processes=$(encode "$processes")&processes_array=$(encode "kak")&file_handles=$(encode "$file_handles")&file_handles_limit=$(encode "$file_handles_limit")&os_kernel=$(encode "$os_kernel")&os_name=$(encode "$os_name")&os_arch=$(encode "$os_arch")&cpu_name=$(encode "$cpu_name")&cpu_cores=$(encode "$cpu_cores")&cpu_freq=$(encode "$cpu_freq")&ram_total=$(encode "$ram_total")&ram_usage=$(encode "$ram_usage")&swap_total=$(encode "$swap_total")&swap_usage=$(encode "$swap_usage")&disk_array=$(encode "$disk_array")&disk_total=$(encode "$disk_total")&disk_usage=$(encode "$disk_usage")&connections=$(encode "$connections")&nic=$(encode "$nic")&ipv4=$(encode "$ipv4")&ipv6=$(encode "$ipv6")&rx=$(encode "$rx")&tx=$(encode "$tx")&rx_gap=$(encode "$rx_gap")&tx_gap=$(encode "$tx_gap")&load=$(encode "$load")&load_cpu=$(encode "$load_cpu")&load_io=$(encode "$load_io")&ping_1=$(encode "$ping_1")"
+data_post="hostname=$(encode "$hostname")&uptime=$(encode "$uptime")&sessions=$(encode "$sessions")&processes=$(encode "$processes")&processes_array=$(encode "kak")&filehandles=$(encode "$filehandles")&filehandles_limit=$(encode "$filehandles_limit")&oskernel=$(encode "$oskernel")&osname=$(encode "$osname")&osarch=$(encode "$osarch")&cpuname=$(encode "$cpuname")&cpucores=$(encode "$cpucores")&cpufreq=$(encode "$cpufreq")&ramtotal=$(encode "$ramtotal")&ramusage=$(encode "$ramusage")&swaptotal=$(encode "$swaptotal")&swapusage=$(encode "$swapusage")&diskarray=$(encode "$diskarray")&disktotal=$(encode "$disktotal")&diskusage=$(encode "$diskusage")&connections=$(encode "$connections")&nic=$(encode "$nic")&ipv4=$(encode "$ipv4")&ipv6=$(encode "$ipv6")&rx=$(encode "$rx")&tx=$(encode "$tx")&rx_gap=$(encode "$rx_gap")&tx_gap=$(encode "$tx_gap")&load=$(encode "$load")&load_cpu=$(encode "$load_cpu")&load_io=$(encode "$load_io")&ping_1=$(encode "$ping_1")"
 echo "$data_post"
 echo "***********"
 echo ""
