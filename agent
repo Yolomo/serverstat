@@ -10,6 +10,10 @@ function formatvar ()
 	echo "$1" | tr -d '\n' | tr -d '='
 }
 
+function encode ()
+{
+	echo "$1" | tr -d '\n' | base64 | tr -d '=' | tr -d '\n' | sed 's/\//%2F/g' | sed 's/\+/%2B/g'
+}
 # Integer values
 function int ()
 {
@@ -161,13 +165,12 @@ load_io=$(prep $(num "$load_io"))
 # Get network latency
 ping_1=$(prep $(num "$(ping -c 2 -w 2 8.8.8.8 | grep rtt | cut -d'/' -f4 | awk '{ print $3 }')"))
 #replace with non-google reliable host
-ping_2=$(prep $(num "$(ping -c 2 -w 2 8.8.4.4 | grep rtt | cut -d'/' -f4 | awk '{ print $3 }')"))
+#ping_2=$(prep $(num "$(ping -c 2 -w 2 8.8.4.4 | grep rtt | cut -d'/' -f4 | awk '{ print $3 }')"))
 
-echo $(formatvar "$version")
 echo $(formatvar "$uptime")
 echo $(formatvar "$sessions")
 echo $(formatvar "$processes")
-echo $(formatvar "$processes_array")
+#echo $(formatvar "$processes_array")
 echo $(formatvar "$file_handles")
 echo $(formatvar "$file_handles_limit")
 echo $(formatvar "$os_kernel")
@@ -195,4 +198,9 @@ echo $(formatvar "$load")
 echo $(formatvar "$load_cpu")
 echo $(formatvar "$load_io")
 echo $(formatvar "$ping_1")
-echo $(formatvar "$ping_2")
+#echo $(formatvar "$ping_2")
+
+echo "***********************"
+
+data_post="data=$(encode "$uptime"),$(encode "$sessions"),$(encode "$processes"),$(encode "$file_handles"),$(encode "$file_handles_limit"),$(encode "$os_kernel"),$(encode "$os_name"),$(encode "$os_arch"),$(encode "$cpu_name"),$(encode "$cpu_cores"),$(encode "$cpu_freq"),$(encode "$ram_total"),$(encode "$ram_usage"),$(encode "$swap_total"),$(encode "$swap_usage"),$(encode "$disk_array"),$(encode "$disk_total"),$(encode "$disk_usage"),$(encode "$connections"),$(encode "$nic"),$(encode "$ipv4"),$(encode "$ipv6"),$(encode "$rx"),$(encode "$tx"),$(encode "$rx_gap"),$(encode "$tx_gap"),$(encode "$load"),$(encode "$load_cpu"),$(encode "$load_io"),$(encode "$ping_1")"
+echo "$data_post"
