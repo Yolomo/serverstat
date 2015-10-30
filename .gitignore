@@ -1,3 +1,5 @@
-lab.go
-sample-output.txt
+agent/agent-tempfile
+server/lab.go
+server/server
+server/sample-output.json
 hosts/
