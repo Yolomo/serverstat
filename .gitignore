@@ -3,3 +3,4 @@ server/lab.go
 server/server
 server/sample-output.json
 hosts/
+serverstat
