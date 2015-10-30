@@ -1,0 +1,219 @@
+#!/bin/bash
+# Prepare values
+function prep ()
+{
+	echo "$1" | sed -e 's/^ *//g' -e 's/ *$//g' | sed -n '1 p'
+}
+
+function formatvar ()
+{
+	echo "$1" | tr -d '\n' | tr -d '='
+}
+function formatvarOrg ()
+{
+	echo "$1" | tr -d '\n' | tr -d '='
+}
+
+function encode ()
+{
+	echo "$1" | tr -d '\n' | base64 
+}
+# Integer values
+function int ()
+{
+	echo ${1/\.*}
+}
+
+# Filter numeric
+function num ()
+{
+	case $1 in
+	    ''|*[!0-9\.]*) echo 0 ;;
+	    *) echo $1 ;;
+	esac
+}
+
+uptime=$(prep $(int "$(cat /proc/uptime | awk '{ print $1 }')"))
+hostname=$(hostname)
+sessions=$(prep "$(who | wc -l)")
+processes=$(prep "$(ps axc | wc -l)")
+processes_array="$(ps axc -o uname:12,pcpu,rss,cmd --sort=-pcpu,-rss --noheaders --width 120)"
+processes_array="$(echo "$processes_array" | grep -v " ps$" | sed 's/ \+ / /g' | sed '/^$/d' | tr "\n" ";")"
+filehandles=$(prep $(num "$(cat /proc/sys/fs/file-nr | awk '{ print $1 }')"))
+filehandles_limit=$(prep $(num "$(cat /proc/sys/fs/file-nr | awk '{ print $3 }')"))
+oskernel=$(prep "$(uname -r)")
+osname=$(prep "$(cat /etc/*release | grep '^PRETTY_NAME=\|^NAME=\|^DISTRIB_ID=' | awk -F\= '{ print $2 }' | tr -d '"' | tac)")
+cpuname=$(prep "$(cat /proc/cpuinfo | grep 'model name' | awk -F\: '{ print $2 }')")
+cpucores=$(prep "$(($(cat /proc/cpuinfo | grep 'model name' | awk -F\: '{ print $2 }' | sed -e :a -e '$!N;s/\n/\|/;ta' | tr -cd \| | wc -c)+1))")
+ramtotal=$(prep $(num "$(cat /proc/meminfo | grep ^MemTotal: | awk '{ print $2 }')"))
+ramfree=$(prep $(num "$(cat /proc/meminfo | grep ^MemFree: | awk '{ print $2 }')"))
+ramcached=$(prep $(num "$(cat /proc/meminfo | grep ^Cached: | awk '{ print $2 }')"))
+rambuffers=$(prep $(num "$(cat /proc/meminfo | grep ^Buffers: | awk '{ print $2 }')"))
+ramusage=$((($ramtotal-($ramfree+$ramcached+$rambuffers))*1024))
+ramtotal=$(($ramtotal*1024))
+swaptotal=$(prep $(num "$(cat /proc/meminfo | grep ^SwapTotal: | awk '{ print $2 }')"))
+swapfree=$(prep $(num "$(cat /proc/meminfo | grep ^SwapFree: | awk '{ print $2 }')"))
+swapusage=$((($swaptotal-$swapfree)*1024))
+swaptotal=$(($swaptotal*1024))
+disktotal=$(prep $(num "$(($(df -P -B 1 | grep '^/' | awk '{ print $2 }' | sed -e :a -e '$!N;s/\n/+/;ta')))"))
+diskusage=$(prep $(num "$(($(df -P -B 1 | grep '^/' | awk '{ print $3 }' | sed -e :a -e '$!N;s/\n/+/;ta')))"))
+
+
+case $(uname -m) in
+x86_64)
+	osarch=$(prep "x64")
+	;;
+i*86)
+	osarch=$(prep "x86")
+	;;
+*)
+	osarch=$(prep "$(uname -m)")
+	;;
+esac
+
+if [ -z "$cpuname" ]
+then
+	cpuname=$(prep "$(cat /proc/cpuinfo | grep 'vendor_id' | awk -F\: '{ print $2 } END { if (!NR) print "N/A" }')")
+	cpucores=$(prep "$(($(cat /proc/cpuinfo | grep 'vendor_id' | awk -F\: '{ print $2 }' | sed -e :a -e '$!N;s/\n/\|/;ta' | tr -cd \| | wc -c)+1))")
+fi
+
+cpufreq=$(prep "$(cat /proc/cpuinfo | grep 'cpu MHz' | awk -F\: '{ print $2 }')")
+
+if [ -z "$cpufreq" ]
+then
+	cpufreq=$(prep $(num "$(lscpu | grep 'CPU MHz' | awk -F\: '{ print $2 }' | sed -e 's/^ *//g' -e 's/ *$//g')"))
+fi
+
+# RAM usage
+
+
+# Disk array
+diskarray=$(prep "$(df -P -B 1 | grep '^/' | awk '{ print $1" "$2" "$3";" }' | sed -e :a -e '$!N;s/\n/ /;ta' | awk '{ print $0 } END { if (!NR) print "N/A" }')")
+
+# Active connections
+if [ -n "$(command -v ss)" ]
+then
+	connections=$(prep $(num "$(ss -tun | tail -n +2 | wc -l)"))
+else
+	connections=$(prep $(num "$(netstat -tun | tail -n +3 | wc -l)"))
+fi
+
+# Network interface
+nic=$(prep "$(ip route get 8.8.8.8 | grep dev | awk -F'dev' '{ print $2 }' | awk '{ print $1 }')")
+
+if [ -z $nic ]
+then
+	nic=$(prep "$(ip link show | grep 'eth[0-9]' | awk '{ print $2 }' | tr -d ':')")
+fi
+
+# IP addresses and network usage
+ipv4=$(prep "$(ip addr show $nic | grep 'inet ' | awk '{ print $2 }' | awk -F\/ '{ print $1 }' | grep -v '^127' | awk '{ print $0 } END { if (!NR) print "N/A" }')")
+ipv6=$(prep "$(ip addr show $nic | grep 'inet6 ' | awk '{ print $2 }' | awk -F\/ '{ print $1 }' | grep -v '^::' | grep -v '^0000:' | grep -v '^fe80:' | awk '{ print $0 } END { if (!NR) print "N/A" }')")
+
+if [ -d /sys/class/net/$nic/statistics ]
+then
+	rx=$(prep $(num "$(cat /sys/class/net/$nic/statistics/rx_bytes)"))
+	tx=$(prep $(num "$(cat /sys/class/net/$nic/statistics/tx_bytes)"))
+else
+	rx=$(prep $(num "$(ip -s link show $nic | grep '[0-9]*' | grep -v '[A-Za-z]' | awk '{ print $1 }' | sed -n '1 p')"))
+	tx=$(prep $(num "$(ip -s link show $nic | grep '[0-9]*' | grep -v '[A-Za-z]' | awk '{ print $1 }' | sed -n '2 p')"))
+fi
+
+# Average system load
+load=$(prep "$(cat /proc/loadavg | awk '{ print $1" "$2" "$3 }')")
+
+# Detailed system load calculation
+time=$(date +%s)
+stat=($(cat /proc/stat | head -n1 | sed 's/[^0-9 ]*//g' | sed 's/^ *//'))
+cpu=$((${stat[0]}+${stat[1]}+${stat[2]}+${stat[3]}))
+io=$((${stat[3]}+${stat[4]}))
+idle=${stat[3]}
+
+if [ -e agent-tempfile ]
+then
+	data=($(cat agent-tempfile))
+	interval=$(($time-${data[0]}))
+	cpugap=$(($cpu-${data[1]}))
+	io_gap=$(($io-${data[2]}))
+	idle_gap=$(($idle-${data[3]}))
+
+	if [[ $cpugap > "0" ]]
+	then
+		load_cpu=$(((1000*($cpugap-$idle_gap)/$cpugap+5)/10))
+	fi
+
+	if [[ $io_gap > "0" ]]
+	then
+		load_io=$(((1000*($io_gap-$idle_gap)/$io_gap+5)/10))
+	fi
+
+	if [[ $rx > ${data[4]} ]]
+	then
+		rx_gap=$(($rx-${data[4]}))
+	fi
+
+	if [[ $tx > ${data[5]} ]]
+	then
+		tx_gap=$(($tx-${data[5]}))
+	fi
+fi
+
+# System load cache
+echo "$time $cpu $io $idle $rx $tx" > agent-tempfile
+
+# Prepare load variables
+rx_gap=$(prep $(num "$rx_gap"))
+tx_gap=$(prep $(num "$tx_gap"))
+load_cpu=$(prep $(num "$load_cpu"))
+load_io=$(prep $(num "$load_io"))
+
+# Get network latency
+ping_1=$(prep $(num "$(ping -c 2 -w 2 8.8.8.8 | grep rtt | cut -d'/' -f4 | awk '{ print $3 }')"))
+#replace with non-google reliable host
+#ping_2=$(prep $(num "$(ping -c 2 -w 2 8.8.4.4 | grep rtt | cut -d'/' -f4 | awk '{ print $3 }')"))
+
+echo $(formatvar "$uptime")
+echo $(formatvar "$sessions")
+echo $(formatvar "$processes")
+#echo $(formatvar "$processes_array")
+echo $(formatvar "$filehandles")
+echo $(formatvar "$filehandles_limit")
+echo $(formatvar "$oskernel")
+echo $(formatvar "$osname")
+echo $(formatvar "$osarch")
+echo $(formatvar "$cpuname")
+echo $(formatvar "$cpucores")
+echo $(formatvar "$cpufreq")
+echo $(formatvar "$ramtotal")
+echo $(formatvar "$ramusage")
+echo $(formatvar "$swaptotal")
+echo $(formatvar "$swapusage")
+echo $(formatvar "$diskarray")
+echo $(formatvar "$disktotal")
+echo $(formatvar "$diskusage")
+echo $(formatvar "$connections")
+echo $(formatvar "$nic")
+echo $(formatvar "$ipv4")
+echo $(formatvar "$ipv6")
+echo $(formatvar "$rx")
+echo $(formatvar "$tx")
+echo $(formatvar "$rx_gap")
+echo $(formatvar "$tx_gap")
+echo $(formatvar "$load")
+echo $(formatvar "$load_cpu")
+echo $(formatvar "$load_io")
+echo $(formatvar "$ping_1")
+#echo $(formatvar "$ping_2")
+
+echo "***********************"
+
+data_post="data=$(encode "$uptime"),$(encode "$sessions"),$(encode "$processes"),$(encode "$filehandles"),$(encode "$filehandles_limit"),$(encode "$oskernel"),$(encode "$osname"),$(encode "$osarch"),$(encode "$cpuname"),$(encode "$cpucores"),$(encode "$cpufreq"),$(encode "$ramtotal"),$(encode "$ramusage"),$(encode "$swaptotal"),$(encode "$swapusage"),$(encode "$diskarray"),$(encode "$disktotal"),$(encode "$diskusage"),$(encode "$connections"),$(encode "$nic"),$(encode "$ipv4"),$(encode "$ipv6"),$(encode "$rx"),$(encode "$tx"),$(encode "$rx_gap"),$(encode "$tx_gap"),$(encode "$load"),$(encode "$load_cpu"),$(encode "$load_io"),$(encode "$ping_1")"
+
+data_post="hostname=$(encode "$hostname")&uptime=$(encode "$uptime")&sessions=$(encode "$sessions")&processes=$(encode "$processes")&processes_array=$(encode "kak")&filehandles=$(encode "$filehandles")&filehandles_limit=$(encode "$filehandles_limit")&oskernel=$(encode "$oskernel")&osname=$(encode "$osname")&osarch=$(encode "$osarch")&cpuname=$(encode "$cpuname")&cpucores=$(encode "$cpucores")&cpufreq=$(encode "$cpufreq")&ramtotal=$(encode "$ramtotal")&ramusage=$(encode "$ramusage")&swaptotal=$(encode "$swaptotal")&swapusage=$(encode "$swapusage")&diskarray=$(encode "$diskarray")&disktotal=$(encode "$disktotal")&diskusage=$(encode "$diskusage")&connections=$(encode "$connections")&nic=$(encode "$nic")&ipv4=$(encode "$ipv4")&ipv6=$(encode "$ipv6")&rx=$(encode "$rx")&tx=$(encode "$tx")&rx_gap=$(encode "$rx_gap")&tx_gap=$(encode "$tx_gap")&load=$(encode "$load")&load_cpu=$(encode "$load_cpu")&load_io=$(encode "$load_io")&ping_1=$(encode "$ping_1")"
+echo "$data_post"
+echo "***********"
+echo ""
+echo ""
+echo ""
+
+curl --data "$data_post" http://localhost:8120/v1/serverstat/update | jsonpp
