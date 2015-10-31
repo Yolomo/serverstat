@@ -27,14 +27,14 @@ func base64Decode(str string) string {
 }
 
 func getJsonVar(js *simplejson.Json, str string) string {
-	result, err := js.Get("hostname").String()
+	result, err := js.Get(str).String()
 	check(err)
 	return result
 }
 
-func v1ViewByHostname(c *gin.Context) {
-	hostname := c.Param("hostname")
-	dat, err := ioutil.ReadFile("hosts/" + hostname + ".json")
+func v1ViewByUID(c *gin.Context) {
+	uid := c.Param("uid")
+	dat, err := ioutil.ReadFile("hosts/host-" + uid + ".json")
 	check(err)
 
 	fmt.Print(string(dat))
@@ -42,13 +42,21 @@ func v1ViewByHostname(c *gin.Context) {
 	js, err := simplejson.NewJson(dat)
 	check(err)
 
-	labVar := getJsonVar(js, "hostname")
+	hostname := getJsonVar(js, "hostname")
+	uptime := getJsonVar(js, "uptime")
+	ipv4 := getJsonVar(js, "ipv4")
 
-	c.String(200, "<h1>Lab</h1><pre>"+labVar+"</pre>")
+	c.JSON(200, gin.H{
+		"hostname": hostname,
+		"uptime":   uptime,
+		"ipv4":     ipv4,
+		"osname":   getJsonVar(js, "osname"),
+	})
 
 }
 func v1ServerStatUpdate(c *gin.Context) {
 
+	uid := base64Decode(c.PostForm("uid"))
 	hostname := base64Decode(c.PostForm("hostname"))
 	uptime := base64Decode(c.PostForm("uptime"))
 	sessions := base64Decode(c.PostForm("sessions"))
@@ -84,6 +92,7 @@ func v1ServerStatUpdate(c *gin.Context) {
 
 	c.JSON(200, gin.H{
 		"status":           "received",
+		"uid":              uid,
 		"hostname":         hostname,
 		"uptime":           uptime,
 		"sessions":         sessions,
@@ -122,16 +131,20 @@ func v1ServerStatUpdate(c *gin.Context) {
 
 func main() {
 	r := gin.Default()
-	r.GET("/lab", func(c *gin.Context) {
+	r.LoadHTMLGlob("templates/*")
+	r.Static("/assets", "./assets")
 
-		labVar := "Test."
-		c.String(200, "<h1>Lab</h1><pre>"+labVar+"</pre>")
+	r.GET("/", func(c *gin.Context) {
+		c.HTML(200, "index.tmpl", gin.H{
+			"title":    "Serverstat",
+			"subtitle": "Easy server statistics monitoring",
+		})
 	})
 
 	v1 := r.Group("/v1")
 	{
 		v1.POST("/serverstat/update", v1ServerStatUpdate)
-		v1.GET("/serverstat/view/:hostname/", v1ViewByHostname)
+		v1.GET("/serverstat/view/:uid/", v1ViewByUID)
 		v1.GET("/serverstat/ping", func(c *gin.Context) {
 			c.String(200, "Pong! ")
 		})

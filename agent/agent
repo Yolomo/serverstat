@@ -1,5 +1,8 @@
 #!/bin/bash
 # Prepare values
+uid="325y34due8r53ifd9239jd8er"
+
+
 function prep ()
 {
 	echo "$1" | sed -e 's/^ *//g' -e 's/ *$//g' | sed -n '1 p'
@@ -207,7 +210,7 @@ echo $(formatvar "$ping_1")
 
 echo "***********************"
 
-data_post="data=$(encode "$uptime"),$(encode "$sessions"),$(encode "$processes"),$(encode "$filehandles"),$(encode "$filehandles_limit"),$(encode "$oskernel"),$(encode "$osname"),$(encode "$osarch"),$(encode "$cpuname"),$(encode "$cpucores"),$(encode "$cpufreq"),$(encode "$ramtotal"),$(encode "$ramusage"),$(encode "$swaptotal"),$(encode "$swapusage"),$(encode "$diskarray"),$(encode "$disktotal"),$(encode "$diskusage"),$(encode "$connections"),$(encode "$nic"),$(encode "$ipv4"),$(encode "$ipv6"),$(encode "$rx"),$(encode "$tx"),$(encode "$rx_gap"),$(encode "$tx_gap"),$(encode "$load"),$(encode "$load_cpu"),$(encode "$load_io"),$(encode "$ping_1")"
+data_post="data=$(encode "$uid"),$(encode "$uptime"),$(encode "$sessions"),$(encode "$processes"),$(encode "$filehandles"),$(encode "$filehandles_limit"),$(encode "$oskernel"),$(encode "$osname"),$(encode "$osarch"),$(encode "$cpuname"),$(encode "$cpucores"),$(encode "$cpufreq"),$(encode "$ramtotal"),$(encode "$ramusage"),$(encode "$swaptotal"),$(encode "$swapusage"),$(encode "$diskarray"),$(encode "$disktotal"),$(encode "$diskusage"),$(encode "$connections"),$(encode "$nic"),$(encode "$ipv4"),$(encode "$ipv6"),$(encode "$rx"),$(encode "$tx"),$(encode "$rx_gap"),$(encode "$tx_gap"),$(encode "$load"),$(encode "$load_cpu"),$(encode "$load_io"),$(encode "$ping_1")"
 
 data_post="hostname=$(encode "$hostname")&uptime=$(encode "$uptime")&sessions=$(encode "$sessions")&processes=$(encode "$processes")&processes_array=$(encode "kak")&filehandles=$(encode "$filehandles")&filehandles_limit=$(encode "$filehandles_limit")&oskernel=$(encode "$oskernel")&osname=$(encode "$osname")&osarch=$(encode "$osarch")&cpuname=$(encode "$cpuname")&cpucores=$(encode "$cpucores")&cpufreq=$(encode "$cpufreq")&ramtotal=$(encode "$ramtotal")&ramusage=$(encode "$ramusage")&swaptotal=$(encode "$swaptotal")&swapusage=$(encode "$swapusage")&diskarray=$(encode "$diskarray")&disktotal=$(encode "$disktotal")&diskusage=$(encode "$diskusage")&connections=$(encode "$connections")&nic=$(encode "$nic")&ipv4=$(encode "$ipv4")&ipv6=$(encode "$ipv6")&rx=$(encode "$rx")&tx=$(encode "$tx")&rx_gap=$(encode "$rx_gap")&tx_gap=$(encode "$tx_gap")&load=$(encode "$load")&load_cpu=$(encode "$load_cpu")&load_io=$(encode "$load_io")&ping_1=$(encode "$ping_1")"
 echo "$data_post"

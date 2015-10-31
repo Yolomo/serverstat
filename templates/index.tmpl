@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <META HTTP-EQUIV="Pragma" CONTENT="no-cache">
+
+    <title>{{ .title }}</title>
+
+    <!-- Bootstrap Core CSS -->
+    <link href="assets/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link href="assets/grayscale.css" rel="stylesheet">
+    <script src="assets/jquery.js"></script> 
+
+    <!-- Custom Fonts  <link href="font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+    <link href='http://fonts.googleapis.com/css?family=Roboto:400,300' rel='stylesheet' type='text/css'>
+    <link href="http://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">-->
+   
+
+
+
+</head>
+
+<body id="page-top" data-spy="scroll" data-target=".navbar-fixed-top">
+
+<!-- 
+<div style="position:fixed; right: 0px; bottom:0px;">
+<form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
+<input type="hidden" name="cmd" value="_s-xclick">
+<input type="hidden" name="hosted_button_id" value="8UK59MVN7T9YW">
+<input type="image" src="https://www.paypalobjects.com/nl_NL/NL/i/btn/btn_donate_LG.gif" border="0" name="submit" alt="PayPal, de veilige en complete manier van online betalen.">
+<img alt="" border="0" src="https://www.paypalobjects.com/nl_NL/i/scr/pixel.gif" width="1" height="1">
+</form>
+
+</div> -->
+    <!-- Navigation -->
+    <nav class="navbar navbar-custom navbar-fixed-top" role="navigation">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-main-collapse">
+                    <i class="fa fa-bars"></i>
+                </button>
+                <a class="navbar-brand page-scroll" href="#page-top">
+                    <i class="fa fa-play-circle"></i>
+                </a>
+                            </div>
+
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse navbar-right navbar-main-collapse">
+               
+            </div>
+            <!-- /.navbar-collapse -->
+        </div>
+        <!-- /.container -->
+    </nav>
+
+    <!-- Intro Header -->
+    <header class="intro">
+        <div class="intro-body">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-8 col-md-offset-2">
+                        <h1 class="brand-heading">{{ .title }}</h1>
+                        <h3 class="">{{ .subtitle }}</h3>
+
+                        <p class="intro-text">&nbsp;</p>
+<!--                         <a href="#twd" class="btn btn-circle page-scroll">
+                            <i class="fa fa-angle-double-down animated"></i>
+                        </a> -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+
+    <!-- progress Section -->
+   
+
+      
+
+    <!-- GoT Section -->
+    <section id="twd" class="container content-section text-center">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2">
+                <h2 id="hosttitle">Sample Host</h2>
+                
+
+                <div id="apicall">Loading.. </div>
+                <script type="text/javascript">
+                 //sample host  325y34due8r53ifd9239jd8er
+                    $(function () { $.get("/v1/serverstat/view/325y34due8r53ifd9239jd8er/", function (data){ 
+                        $("#apicall").html(""); 
+                        $("#apicall").append("Hostname: "+data.hostname); 
+                        $("#apicall").append("<br/>Uptime: "+data.uptime); 
+                        $("#apicall").append("<br/>IPv4: "+data.ipv4); 
+                        $("#apicall").append("<br/>OS: "+data.osname); 
+                        $("#hosttitle").html(data.hostname+" ("+data.osname+")")
+                      
+                        
+                        console.log("DE LOG"+data.uptime);
+                        }); });
+                </script>
+                
+                </br>
+            </div>
+        </div>
+    </section>
+
+  
+    <!-- Footer -->
+    <footer>
+        <div class="container text-center">
+            <p>Powered by ServerStat</p>
+        </div>
+    </footer>
+
+    <!-- jQuery -->
+
+
+    <!-- Bootstrap Core JavaScript -->
+    <script src="js/bootstrap.min.js"></script>
+
+    <!-- Plugin JavaScript -->
+    <script src="js/jquery.easing.min.js"></script>
+
+    <!-- Google Maps API Key - Use your own API key to enable the map feature. More information on the Google Maps API can be found at https://developers.google.com/maps/ -->
+
+
+    <!-- Custom Theme JavaScript -->
+    <script src="js/grayscale.js"></script>
+
+</body>
+
+</html>
