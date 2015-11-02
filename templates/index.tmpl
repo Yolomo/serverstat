@@ -84,7 +84,22 @@
     <!-- progress Section -->
    
 
-      
+   <!-- GoT Section -->
+    <section id="twd" class="container content-section text-center">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2">
+                <h2 id="hosttitle">Console</h2>
+                
+
+                <pre id="console">{{ .console }}</pre>
+               
+                
+                </br>
+            </div>
+        </div>
+    </section>      
+
+
 
     <!-- GoT Section -->
     <section id="twd" class="container content-section text-center">
@@ -102,6 +117,7 @@
                         $("#apicall").append("<br/>Uptime: "+data.uptime); 
                         $("#apicall").append("<br/>IPv4: "+data.ipv4); 
                         $("#apicall").append("<br/>OS: "+data.osname); 
+                        $("#apicall").append("<br/>Last updated: "+data.lastupdate); 
                         $("#hosttitle").html(data.hostname+" ("+data.osname+")")
                       
                         

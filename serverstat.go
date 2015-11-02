@@ -1,17 +1,37 @@
 package main
 
 import (
+	//	"database/sql"
 	"encoding/base64"
+	//"encoding/json"
 	"fmt"
 	"github.com/bitly/go-simplejson"
 	"github.com/gin-gonic/gin"
+	//	"github.com/jmoiron/sqlx"
+	//"github.com/mdeheij/serverstat/dataprocessor"
 	"io/ioutil"
+	"os"
+	"strconv"
+	"time"
 )
+
+type person struct {
+	name string
+	age  int
+}
 
 func check(e error) {
 	if e != nil {
 		panic(e)
 	}
+}
+
+var console string
+
+func log(str string) {
+	now := time.Now()
+	time := strconv.Itoa(now.Hour()) + ":" + strconv.Itoa(now.Minute()) + ":" + strconv.Itoa(now.Nanosecond())
+	console = console + "\n● [" + time + "] " + str
 }
 
 func base64Encode(str string) string {
@@ -34,23 +54,55 @@ func getJsonVar(js *simplejson.Json, str string) string {
 
 func v1ViewByUID(c *gin.Context) {
 	uid := c.Param("uid")
-	dat, err := ioutil.ReadFile("hosts/host-" + uid + ".json")
+	statsFile := "hosts/host-" + uid + ".json"
+	dat, err := ioutil.ReadFile(statsFile)
 	check(err)
+
+	statsFileInfo, err := os.Stat(statsFile)
+	check(err)
+
+	lastUpdate := statsFileInfo.ModTime()
 
 	fmt.Print(string(dat))
 
 	js, err := simplejson.NewJson(dat)
 	check(err)
 
-	hostname := getJsonVar(js, "hostname")
-	uptime := getJsonVar(js, "uptime")
-	ipv4 := getJsonVar(js, "ipv4")
-
 	c.JSON(200, gin.H{
-		"hostname": hostname,
-		"uptime":   uptime,
-		"ipv4":     ipv4,
-		"osname":   getJsonVar(js, "osname"),
+		"lastupdate":       lastUpdate,
+		"uid":              uid,
+		"hostname":         getJsonVar(js, "hostname"),
+		"uptime":           getJsonVar(js, "uptime"),
+		"sessions":         getJsonVar(js, "sessions"),
+		"processes":        getJsonVar(js, "processes"),
+		"processesarray":   getJsonVar(js, "processesarray"),
+		"filehandles":      getJsonVar(js, "filehandles"),
+		"filehandleslimit": getJsonVar(js, "filehandleslimit"),
+		"oskernel":         getJsonVar(js, "oskernel"),
+		"osname":           getJsonVar(js, "osname"),
+		"osarch":           getJsonVar(js, "osarch"),
+		"cpuname":          getJsonVar(js, "cpuname"),
+		"cpucores":         getJsonVar(js, "cpucores"),
+		"cpufreq":          getJsonVar(js, "cpufreq"),
+		"ramtotal":         getJsonVar(js, "ramtotal"),
+		"ramusage":         getJsonVar(js, "ramusage"),
+		"swaptotal":        getJsonVar(js, "swaptotal"),
+		"swapusage":        getJsonVar(js, "swapusage"),
+		"diskarray":        getJsonVar(js, "diskarray"),
+		"disktotal":        getJsonVar(js, "disktotal"),
+		"diskusage":        getJsonVar(js, "diskusage"),
+		"connections":      getJsonVar(js, "connections"),
+		"nic":              getJsonVar(js, "nic"),
+		"ipv4":             getJsonVar(js, "ipv4"),
+		"ipv6":             getJsonVar(js, "ipv6"),
+		"rx":               getJsonVar(js, "rx"),
+		"tx":               getJsonVar(js, "tx"),
+		"rxgap":            getJsonVar(js, "rxgap"),
+		"txgap":            getJsonVar(js, "txgap"),
+		"load":             getJsonVar(js, "load"),
+		"loadcpu":          getJsonVar(js, "loadcpu"),
+		"loadio":           getJsonVar(js, "loadio"),
+		"ping1":            getJsonVar(js, "ping1"),
 	})
 
 }
@@ -135,9 +187,21 @@ func main() {
 	r.Static("/assets", "./assets")
 
 	r.GET("/", func(c *gin.Context) {
+		console = ""
+		/*		s := person{age: 50}
+
+				log("Naam: " + s.name)
+				s.name = "Henk de Vries"
+				log("Naam: " + s.name)
+				log("Leeftijd: " + strconv.Itoa(s.age))*/
+		//	var myJson MyJsonName
+		//		json.Unmarshal(jsonSrc, &myJson)
+		log("")
+
 		c.HTML(200, "index.tmpl", gin.H{
 			"title":    "Serverstat",
 			"subtitle": "Easy server statistics monitoring",
+			"console":  console,
 		})
 	})
 
@@ -150,6 +214,6 @@ func main() {
 		})
 	}
 
-	fmt.Println("http://localhost:8120/")
-	r.Run(":8120") // listen and serve on 0.0.0.0:8080
+	fmt.Println("http://localhost:8087/")
+	r.Run(":8087") // listen and serve on 0.0.0.0:8080
 }
