@@ -18,7 +18,15 @@ func main2() {
 
 }
 func main() {
-	cmd := exec.Command("cat", "8.8.1.6", "-c 1") //complete bullshit for exit code simulation
+	cmdName := "ping"
+	cmdArgs := []string{"-c 10", "-i", "0.2", "-w 2", "bartbart333.tk"}
+
+	execute(cmdName, cmdArgs)
+}
+
+func execute(cmdName string, cmdArgs []string) {
+	cmd := exec.Command(cmdName, cmdArgs...)
+	//	cmd := exec.Command("cat", "8.8.1.6", "-c 1") //complete bullshit for exit code simulation
 	cmdOutput := &bytes.Buffer{}
 	errOutput := &bytes.Buffer{}
 	cmd.Stdout = cmdOutput
