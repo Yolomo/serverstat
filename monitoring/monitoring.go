@@ -1,14 +1,10 @@
 package main
 
 import (
-	/*	"database/sql"
-		"encoding/base64"
-		"encoding/json"*/
-	"fmt"
-	"os"
-	"os/exec"
-	"strings"
-	"syscall"
+	"database/sql"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/mysql"
+	"log"
 )
 
 type check struct {
@@ -17,46 +13,41 @@ type check struct {
 	Command string
 }
 
-/*func exec() int {
-	fmt.Println("Executing.. *NOT IMPLEMENTED YET*")
+var schema = `
+CREATE TABLE person (
+    first_name text,
+    last_name text,
+    email text
+);
 
-	return 0 //exit status
-}*/
-func printCommand(cmd *exec.Cmd) {
-	fmt.Printf("==> Executing: %s\n", strings.Join(cmd.Args, " "))
+CREATE TABLE place (
+    country text,
+    city text NULL,
+    telcode integer
+)`
+
+type Person struct {
+	FirstName string `db:"first_name"`
+	LastName  string `db:"last_name"`
+	Email     string
 }
 
-func printError(err error) {
-	if err != nil {
-		os.Stderr.WriteString(fmt.Sprintf("==> Error: %s\n", err.Error()))
-	}
-}
-
-func printOutput(outs []byte) {
-	if len(outs) > 0 {
-		fmt.Printf("==> Output AAH: %s\n", string(outs))
-	}
-}
-
-func justDoIt() {
-
-	cmd := exec.Command("cat", "/etc/hosts")
-
-	var waitStatus syscall.WaitStatus
-	if err := cmd.Run(); err != nil {
-		printError(err)
-		// Did the command fail because of an unsuccessful exit code
-		if exitError, ok := err.(*exec.ExitError); ok {
-			waitStatus = exitError.Sys().(syscall.WaitStatus)
-			printOutput([]byte(fmt.Sprintf("%d", waitStatus.ExitStatus())))
-		}
-	} else {
-		// Command was successful
-		waitStatus = cmd.ProcessState.Sys().(syscall.WaitStatus)
-		printOutput([]byte(fmt.Sprintf("%d", waitStatus.ExitStatus())))
-	}
+type Place struct {
+	Country string
+	City    sql.NullString
+	TelCode int
 }
 
 func main() {
-	justDoIt()
+	db, err := sqlx.Connect("mysql", "user=serverstat dbname=serverstat sslmode=disable")
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	db.MustExec(schema)
+	//args := []string{""}
+	/*args := []string{"-c 2", "-i", "0.2", "-w 2", "bartbart333.tk"}
+	debugExec("ping", args)*/
+	//args = []string{"aasasfasf;;;nu.nl"}
+	//debugExec("cat", args)
 }

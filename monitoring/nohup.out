@@ -1,6 +1,0 @@
-PING nu.nl (62.69.166.254) 56(84) bytes of data.
-64 bytes from 62-69-166-254.ptr.as24646.net (62.69.166.254): icmp_seq=1 ttl=248 time=5.41 ms
-
---- nu.nl ping statistics ---
-1 packets transmitted, 1 received, 0% packet loss, time 0ms
-rtt min/avg/max/mdev = 5.418/5.418/5.418/0.000 ms
