@@ -21,7 +21,7 @@ func main2() {
 
 }
 
-func debugExec(executable string, args []string) {
+func DebugExec(executable string, args []string) (status int) {
 	now := time.Now()
 	time := strconv.Itoa(now.Hour()) + ":" + strconv.Itoa(now.Minute())
 
@@ -29,12 +29,13 @@ func debugExec(executable string, args []string) {
 
 	var tekentje string
 	if status > 0 {
-		tekentje = "✖"
+		tekentje = StatusColor("●", false)
 	} else {
-		tekentje = "●"
+		tekentje = StatusColor("●", true)
 	}
 
 	fmt.Println(tekentje + " [" + time + "] (" + strconv.Itoa(status) + ") - " + output)
+	return status
 }
 
 func execute(cmdName string, cmdArgs []string) (status int, output string) {
